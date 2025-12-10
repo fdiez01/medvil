@@ -6,8 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview",
-    "tailwind-init": "tailwindcss init -p"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",
