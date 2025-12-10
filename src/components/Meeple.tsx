@@ -1,3 +1,4 @@
+/// <reference types="@react-three/fiber" />
 import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Group, Mesh, Vector3, MeshStandardMaterial } from 'three';
@@ -30,14 +31,10 @@ export const Meeple: React.FC<MeepleProps> = ({ data, isSelected, onClick }) => 
       if (isNaN(tx) || isNaN(tz)) return;
 
       // 2. Distance Threshold
-      // Do NOT look if too close. This prevents the "LookAt Zero" bug which generates NaNs.
-      // Increased threshold to 0.5 to be extremely safe.
       const distSq = (tx - currentPos.x)**2 + (tz - currentPos.z)**2;
       if (distSq < 0.25) return; 
 
       // 3. Execute LookAt on flattened plane
-      // Creating a new Vector3 every frame is fine, JS engines handle this well.
-      // We force Y to match current Y to prevent tilting.
       const targetVec = new Vector3(tx, currentPos.y, tz);
       groupRef.current.lookAt(targetVec);
   };
@@ -48,12 +45,10 @@ export const Meeple: React.FC<MeepleProps> = ({ data, isSelected, onClick }) => 
     
     if (groupRef.current) {
       // --- ANTI-VANISH SYSTEM ---
-      // Check for corrupted matrix (NaNs) which causes disappearance
       const p = groupRef.current.position;
       const q = groupRef.current.quaternion;
       
       if (isNaN(p.x) || isNaN(p.y) || isNaN(p.z) || isNaN(q.x) || isNaN(q.y) || isNaN(q.z) || isNaN(q.w)) {
-          // Emergency Reset
           console.warn(`[Physics Correction] Resetting corrupted matrix for ${data.name}`);
           groupRef.current.quaternion.identity();
           groupRef.current.position.set(...data.basePosition);
@@ -75,13 +70,12 @@ export const Meeple: React.FC<MeepleProps> = ({ data, isSelected, onClick }) => 
               safeLookAt(data.targetPosition);
           }
       }
-      // Combat/Idle logic handled implicitly
     }
 
     // --- VISUAL EFFECTS ---
     const timeSinceHit = t - data.lastHitTime;
 
-    // 1. Red Flash on Hit (lasts 0.2s)
+    // 1. Red Flash on Hit
     if (bodyRef.current) {
         const mat = bodyRef.current.material as MeshStandardMaterial;
         if (timeSinceHit < 0.2) {
@@ -95,17 +89,16 @@ export const Meeple: React.FC<MeepleProps> = ({ data, isSelected, onClick }) => 
         }
     }
 
-    // 2. Combat Particle Burst (lasts 0.5s)
+    // 2. Combat Particle Burst
     if (combatParticlesRef.current) {
         if (timeSinceHit < 0.5) {
             combatParticlesRef.current.visible = true;
-            // Expand particles
             combatParticlesRef.current.children.forEach((mesh, i) => {
                 const dir = (i / 8) * Math.PI * 2;
                 const expandSpeed = 3 * timeSinceHit;
                 mesh.position.x = Math.sin(dir) * expandSpeed;
                 mesh.position.z = Math.cos(dir) * expandSpeed;
-                mesh.position.y = Math.sin(timeSinceHit * 10) * 0.5; // Arcing up
+                mesh.position.y = Math.sin(timeSinceHit * 10) * 0.5; 
                 const scale = Math.max(0, 1 - timeSinceHit * 2);
                 mesh.scale.setScalar(scale * 0.2);
             });
@@ -114,14 +107,12 @@ export const Meeple: React.FC<MeepleProps> = ({ data, isSelected, onClick }) => 
         }
     }
 
-    // 3. Stumble/Wobble Animation (lasts 1.0s after hit, if wounded/infected)
+    // 3. Stumble/Wobble Animation
     if (groupRef.current && data.action === 'RETURNING' && (data.status === 'Wounded' || data.status === 'Infected')) {
         if (timeSinceHit < 1.0) {
-            // Add noise to rotation
-            groupRef.current.rotation.z = Math.sin(t * 20) * 0.2; // Fast wobble
+            groupRef.current.rotation.z = Math.sin(t * 20) * 0.2; 
             groupRef.current.rotation.x = Math.cos(t * 15) * 0.1; 
         } else {
-            // Smoothly reset
              groupRef.current.rotation.z *= 0.9;
              groupRef.current.rotation.x *= 0.9;
         }
@@ -177,15 +168,13 @@ export const Meeple: React.FC<MeepleProps> = ({ data, isSelected, onClick }) => 
         ritualParticlesRef.current.visible = false;
     }
 
-    // Reset rotation if not sleeping AND not stumbling (Important!)
+    // Reset rotation check
     if (data.action !== 'SLEEPING' && timeSinceHit >= 1.0 && groupRef.current && groupRef.current.rotation.x !== 0 && Math.abs(groupRef.current.rotation.x) > 0.01) {
-        // Only force reset if we are done stumbling and not sleeping
          groupRef.current.rotation.x = 0;
          groupRef.current.rotation.z = 0;
     }
   });
 
-  // Status Indicator Color
   const statusColor = useMemo(() => {
     switch(data.status) {
         case 'Infected': return 'lime';
@@ -234,6 +223,42 @@ export const Meeple: React.FC<MeepleProps> = ({ data, isSelected, onClick }) => 
                 <icosahedronGeometry args={[0.25, 0]} />
                 <meshStandardMaterial color={PALETTE.meepleSkin} />
             </mesh>
+
+            {/* --- ACCESSORIES --- */}
+            
+            {/* Chef: Graduation Hat */}
+            {data.role === 'Chef' && (
+                <group position={[0, 0.85, 0]}>
+                    <mesh position={[0, -0.1, 0]}>
+                        <cylinderGeometry args={[0.16, 0.18, 0.15]} />
+                        <meshStandardMaterial color={data.color} />
+                    </mesh>
+                    <mesh position={[0, 0, 0]} rotation={[0, Math.PI/4, 0]}>
+                        <boxGeometry args={[0.5, 0.05, 0.5]} />
+                        <meshStandardMaterial color={data.color} />
+                    </mesh>
+                </group>
+            )}
+
+            {/* Priestess: Simple Small Cone */}
+            {data.role === 'Priestess' && (
+                <group position={[0, 0.9, 0]}>
+                     <mesh position={[0, 0, 0]}>
+                        <coneGeometry args={[0.2, 0.6, 16]} />
+                        <meshStandardMaterial color={data.color} />
+                    </mesh>
+                </group>
+            )}
+
+            {/* Drunkard: Hat, no nose */}
+            {data.role === 'Drunkard' && (
+                <group>
+                    <mesh position={[0, 0.8, 0]} rotation={[0.1, 0, 0.2]}>
+                        <cylinderGeometry args={[0.21, 0.22, 0.15]} />
+                        <meshStandardMaterial color={data.color} />
+                    </mesh>
+                </group>
+            )}
 
             {/* Left Shoulder Pivot */}
             <group ref={leftShoulderRef} position={[0.25, 0.35, 0]}>

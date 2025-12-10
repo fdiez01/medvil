@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, SoftShadows } from '@react-three/drei';
+import { OrbitControls } from '@react-three/drei';
 import { GameState, Meeple as MeepleType, ResourceNode, PlantNode, MobEntity, CHAR_SPEED, MOB_SPEED, DAY_LENGTH_SECONDS, ResourceType } from './gameData';
 import { Bonfire } from './components/Bonfire';
 import { Meeple } from './components/Meeple';
@@ -137,7 +137,6 @@ export const App = () => {
           // Invincibility period (0.5s) to prevent spam hits
           const isInvincible = (currentTime - m.lastHitTime) < 0.5;
 
-          // Merge resolved: Use distToHome > 5 (AI Studio version)
           if (distToHome > 5 && m.status !== 'Dead' && !isInvincible) {
               const hitMob = mobs.find(mob => distance(m.position, mob.position) < 1.5);
               if (hitMob) {
@@ -387,7 +386,6 @@ export const App = () => {
   return (
     <div className="relative w-full h-full font-mono text-white">
       <Canvas shadows camera={{ position: [8, 8, 8], fov: 40 }}>
-        <SoftShadows size={10} samples={10} />
         <Environment 
             gameHour={gameState.hour} 
             trees={trees} 
