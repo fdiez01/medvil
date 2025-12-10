@@ -1,6 +1,6 @@
 import React, { useRef, useState, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Color, Fog, DirectionalLight, HemisphereLight, SpotLight, MathUtils } from 'three';
+import { Color, Fog, DirectionalLight, HemisphereLight, MathUtils } from 'three';
 import { ResourceNode, PlantNode, PALETTE, ResourceType } from '../gameData';
 
 interface EnvironmentProps {
@@ -44,16 +44,35 @@ const TreeFoliage: React.FC<{
   onClick: (id: number, type: ResourceType, pos: [number, number, number]) => void 
 }> = ({ tree, isGathering, onClick }) => {
   const [hovered, setHovered] = useState(false);
-  const active = isGathering && hovered;
+  
+  // Logic de sélection (fusionnée)
+  const canGather = isGathering && tree.available.food;
+  const active = canGather && hovered;
+
   const color = active ? HOVER_COLOR : PALETTE.treeLeaves;
   const appleColor = active ? HOVER_COLOR : "#ff3333";
 
   return (
     <group 
         position={[0, 2.5, 0]}
-        onClick={(e) => { e.stopPropagation(); onClick(tree.id, 'food', tree.position); }}
-        onPointerOver={(e) => { if (isGathering) { e.stopPropagation(); setHovered(true); document.body.style.cursor = 'pointer'; } }}
-        onPointerOut={(e) => { e.stopPropagation(); setHovered(false); document.body.style.cursor = 'auto'; }}
+        onClick={(e) => { 
+            e.stopPropagation(); 
+            if (tree.available.food) {
+                onClick(tree.id, 'food', tree.position); 
+            }
+        }}
+        onPointerOver={(e) => { 
+            if (canGather) { 
+                e.stopPropagation(); 
+                setHovered(true); 
+                document.body.style.cursor = 'pointer'; 
+            } 
+        }}
+        onPointerOut={(e) => { 
+            e.stopPropagation(); 
+            setHovered(false); 
+            document.body.style.cursor = 'auto'; 
+        }}
     >
         <mesh castShadow>
             <dodecahedronGeometry args={[1.2, 0]} />
@@ -76,6 +95,23 @@ const TreeFoliage: React.FC<{
                     <meshStandardMaterial color={appleColor} />
                 </mesh>
                 <mesh position={[0, -0.2, -1.0]}>
+                    <sphereGeometry args={[0.15]} />
+                    <meshStandardMaterial color={appleColor} />
+                </mesh>
+                {/* Additional Apples for natural look (fusionné) */}
+                <mesh position={[0.4, 0.6, 0.6]}>
+                    <sphereGeometry args={[0.15]} />
+                    <meshStandardMaterial color={appleColor} />
+                </mesh>
+                 <mesh position={[-0.4, -0.5, -0.6]}>
+                    <sphereGeometry args={[0.15]} />
+                    <meshStandardMaterial color={appleColor} />
+                </mesh>
+                 <mesh position={[0.2, 0.8, -0.4]}>
+                    <sphereGeometry args={[0.15]} />
+                    <meshStandardMaterial color={appleColor} />
+                </mesh>
+                <mesh position={[-0.7, 0.1, -0.5]}>
                     <sphereGeometry args={[0.15]} />
                     <meshStandardMaterial color={appleColor} />
                 </mesh>
@@ -132,20 +168,11 @@ export const Environment: React.FC<EnvironmentProps> = ({ gameHour, trees, plant
   
   useFrame(({ scene }) => {
     // --- TIME CALCULATION ---
-    // Shift the cycle so 5am is start of dawn, 13pm is noon peak, 21pm is sunset end.
-    // 5 to 21 = 16 hours of "daylight" curve.
-    
     let dayIntensity = 0;
     if (gameHour >= 5 && gameHour <= 21) {
-        // Create a sine wave that starts at 0 at 5h, peaks at 13h, ends at 0 at 21h
-        // (hour - 5) goes from 0 to 16.
-        // PI * (hour - 5) / 16 goes from 0 to PI.
-        // sin(0) = 0, sin(PI/2) = 1, sin(PI) = 0.
         dayIntensity = Math.sin((gameHour - 5) * Math.PI / 16);
     }
     
-    const nightIntensity = 1 - dayIntensity;
-
     // --- COLORS ---
     const skyColor = new Color();
     const daySky = new Color(PALETTE.skyDay);
@@ -156,7 +183,6 @@ export const Environment: React.FC<EnvironmentProps> = ({ gameHour, trees, plant
     if (dayIntensity > 0.8) {
          skyColor.copy(daySky);
     } else if (dayIntensity > 0) {
-         // Interpolate Day -> Dusk -> Night
          skyColor.copy(nightSky).lerp(duskSky, dayIntensity * 2).lerp(daySky, dayIntensity);
     } else {
          skyColor.copy(nightSky);
@@ -169,10 +195,8 @@ export const Environment: React.FC<EnvironmentProps> = ({ gameHour, trees, plant
     const fog = scene.fog as Fog;
     fog.color.copy(skyColor);
     
-    // Day Fog: Far (50), Night Fog: Farther (60) to see clearly, but Darker color handles the mood.
-    // Actually user wanted "clearer night".
-    const targetNear = 10 + dayIntensity * 5; // 10 at night, 15 at day
-    const targetFar = 60 - dayIntensity * 10; // 60 at night (clearer), 50 at day
+    const targetNear = 10 + dayIntensity * 5; 
+    const targetFar = 60 - dayIntensity * 10; 
     
     fog.near = MathUtils.lerp(fog.near, targetNear, 0.05);
     fog.far = MathUtils.lerp(fog.far, targetFar, 0.05);
@@ -180,7 +204,7 @@ export const Environment: React.FC<EnvironmentProps> = ({ gameHour, trees, plant
     // --- LIGHTS ---
     if (dirLightRef.current && hemiLightRef.current) {
         // Sun Movement
-        const sunAngle = ((gameHour - 13) / 24) * Math.PI * 2; // Noon (13h) = 0 angle (top)
+        const sunAngle = ((gameHour - 13) / 24) * Math.PI * 2; 
         const radius = 20;
         const sunX = Math.sin(sunAngle) * radius;
         const sunY = Math.cos(sunAngle) * radius;
@@ -198,13 +222,11 @@ export const Environment: React.FC<EnvironmentProps> = ({ gameHour, trees, plant
         }
 
         // Ambient / Hemisphere Light (Base Visibility)
-        // Night Ambient needs to be higher for visibility (~0.4)
-        // Day Ambient (~0.6)
         const targetHemiIntensity = 0.4 + (dayIntensity * 0.4); 
         hemiLightRef.current.intensity = MathUtils.lerp(hemiLightRef.current.intensity, targetHemiIntensity, 0.05);
         
         const groundColorDay = new Color(PALETTE.ground);
-        const groundColorNight = new Color("#0f1219"); // Slightly lighter black
+        const groundColorNight = new Color("#0f1219"); 
         hemiLightRef.current.groundColor.lerpColors(groundColorNight, groundColorDay, dayIntensity);
         
         const skyColorRef = new Color().copy(skyColor).multiplyScalar(0.8);
@@ -214,7 +236,7 @@ export const Environment: React.FC<EnvironmentProps> = ({ gameHour, trees, plant
 
   return (
     <>
-      <ambientLight intensity={0.2} /> {/* Base base light */}
+      <ambientLight intensity={0.2} /> 
       <hemisphereLight ref={hemiLightRef} />
       <directionalLight ref={dirLightRef} castShadow shadow-mapSize={[2048, 2048]} shadow-bias={-0.0005} />
 

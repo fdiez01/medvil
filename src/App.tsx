@@ -137,7 +137,8 @@ export const App = () => {
           // Invincibility period (0.5s) to prevent spam hits
           const isInvincible = (currentTime - m.lastHitTime) < 0.5;
 
-          if (distToHome > 2 && m.status !== 'Dead' && !isInvincible) {
+          // Merge resolved: Use distToHome > 5 (AI Studio version)
+          if (distToHome > 5 && m.status !== 'Dead' && !isInvincible) {
               const hitMob = mobs.find(mob => distance(m.position, mob.position) < 1.5);
               if (hitMob) {
                   const isNight = gs.hour < 6 || gs.hour > 20;
