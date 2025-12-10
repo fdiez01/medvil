@@ -1,0 +1,5 @@
+{
+  "name": "Medvil",
+  "description": "A low-poly 3D RTS survival game featuring procedural environments, character management, and a day/night cycle.",
+  "requestFramePermissions": []
+}
