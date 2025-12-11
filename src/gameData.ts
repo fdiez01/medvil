@@ -5,7 +5,7 @@ export const PALETTE = {
   ground: '#1e2f1e', // Dark green
   skyDay: '#87CEEB',
   skyDusk: '#ff9966',
-  skyNight: '#1a2035', // Lighter navy for better visibility
+  skyNight: '#2c3e50', // Lighter navy (Nuit Américaine style)
   treeTrunk: '#4a3728',
   treeLeaves: '#2d5a27',
   fire: '#ff5500',
@@ -13,7 +13,7 @@ export const PALETTE = {
   mob: '#111111',
   mobEyes: '#ff0000',
   fogDay: '#e0f7fa',
-  fogNight: '#1a2035', 
+  fogNight: '#2c3e50', 
 };
 
 // --- Types ---
@@ -46,8 +46,11 @@ export interface PlantNode {
 export interface MobEntity {
   id: number;
   position: [number, number, number];
-  angle: number; // For circular patrol math
+  angle: number; // Current facing angle
   speed: number;
+  state: 'PATROL' | 'WAIT' | 'ATTACK_DASH' | 'FLEEING';
+  waitTimer: number; // How long to wait before moving again
+  dashTarget: [number, number, number] | null; // Position to dash towards
   targetMeepleId: number | null; // For combat locking
   lastHitTime: number;
 }
@@ -64,6 +67,7 @@ export interface Meeple {
   actionTargetId: number | null; // ID of tree or target
   targetResource: ResourceType | null; // Specific resource they are after
   actionTimer: number; // Used for timing actions (gathering, eating) inside the loop
+  stunTimer: number; // If > 0, meeple is stunned
   color: string;
   lastHitTime: number;
 }
@@ -80,5 +84,6 @@ export interface GameState {
 }
 
 export const CHAR_SPEED = 3.5;
-export const MOB_SPEED = 1.5;
+export const MOB_SPEED = 1.8; // Patrol speed
+export const MOB_DASH_SPEED = 8.0; // Attack speed
 export const DAY_LENGTH_SECONDS = 240; // Real seconds per game day (Slower time)

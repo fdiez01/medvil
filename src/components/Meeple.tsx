@@ -1,4 +1,3 @@
-/// <reference types="@react-three/fiber" />
 import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Group, Mesh, Vector3, MeshStandardMaterial } from 'three';
@@ -59,15 +58,23 @@ export const Meeple: React.FC<MeepleProps> = ({ data, isSelected, onClick }) => 
       if (!isNaN(data.position[0]) && !isNaN(data.position[1]) && !isNaN(data.position[2])) {
           groupRef.current.position.set(...data.position);
       }
+
+      // --- STUN EFFECT (Shake) ---
+      if (data.stunTimer > 0) {
+          groupRef.current.position.x += (Math.random() - 0.5) * 0.1;
+          groupRef.current.position.z += (Math.random() - 0.5) * 0.1;
+      }
       
       // --- ORIENTATION LOGIC ---
-      if (data.action === 'MOVING' && data.targetPosition) {
-         safeLookAt(data.targetPosition);
-      } else if (data.action === 'RETURNING') {
-         safeLookAt(data.basePosition);
-      } else if (data.action === 'CHOPPING' || data.action === 'GATHERING') {
-          if (data.targetPosition) {
-              safeLookAt(data.targetPosition);
+      if (data.stunTimer <= 0) {
+          if (data.action === 'MOVING' && data.targetPosition) {
+             safeLookAt(data.targetPosition);
+          } else if (data.action === 'RETURNING') {
+             safeLookAt(data.basePosition);
+          } else if (data.action === 'CHOPPING' || data.action === 'GATHERING') {
+              if (data.targetPosition) {
+                  safeLookAt(data.targetPosition);
+              }
           }
       }
     }
@@ -107,8 +114,8 @@ export const Meeple: React.FC<MeepleProps> = ({ data, isSelected, onClick }) => 
         }
     }
 
-    // 3. Stumble/Wobble Animation
-    if (groupRef.current && data.action === 'RETURNING' && (data.status === 'Wounded' || data.status === 'Infected')) {
+    // 3. Stumble/Wobble Animation (Walking wounded)
+    if (groupRef.current && data.action === 'RETURNING' && (data.status === 'Wounded' || data.status === 'Infected') && data.stunTimer <= 0) {
         if (timeSinceHit < 1.0) {
             groupRef.current.rotation.z = Math.sin(t * 20) * 0.2; 
             groupRef.current.rotation.x = Math.cos(t * 15) * 0.1; 
@@ -121,7 +128,7 @@ export const Meeple: React.FC<MeepleProps> = ({ data, isSelected, onClick }) => 
     // --- ANIMATIONS ---
 
     // 1. Squash & Stretch (Walking)
-    const isWalking = data.action === 'MOVING' || data.action === 'RETURNING';
+    const isWalking = (data.action === 'MOVING' || data.action === 'RETURNING') && data.stunTimer <= 0;
     
     if (isWalking && bodyRef.current) {
       const hop = Math.abs(Math.sin(t * speed)) * 0.2;
@@ -139,7 +146,12 @@ export const Meeple: React.FC<MeepleProps> = ({ data, isSelected, onClick }) => 
         let leftX = 0;
         let rightX = 0;
 
-        if (isWalking) {
+        if (data.stunTimer > 0) {
+             // Stunned Pose (arms limp/random)
+             leftZ = 0.1; rightZ = -0.1;
+             leftX = Math.sin(t * 10) * 0.2;
+             rightX = Math.cos(t * 10) * 0.2;
+        } else if (isWalking) {
             leftX = Math.sin(t * speed) * 0.8;
             rightX = -Math.sin(t * speed) * 0.8;
         } else if (data.action === 'CHOPPING' || data.action === 'GATHERING') {
@@ -204,6 +216,13 @@ export const Meeple: React.FC<MeepleProps> = ({ data, isSelected, onClick }) => 
                     <meshBasicMaterial color={statusColor} />
                  </mesh>
             </Billboard>
+        )}
+
+        {/* Stun Indicator */}
+        {data.stunTimer > 0 && (
+             <Billboard position={[0, 2.5, 0]}>
+                <Text fontSize={0.5} color="yellow">💫</Text>
+             </Billboard>
         )}
         
         {/* Name Tag */}

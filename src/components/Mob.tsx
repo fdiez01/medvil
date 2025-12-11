@@ -1,7 +1,6 @@
-/// <reference types="@react-three/fiber" />
 import React, { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Group, MeshStandardMaterial, Mesh } from 'three';
+import { Group, MeshStandardMaterial, Mesh, MathUtils } from 'three';
 import { PALETTE, MobEntity } from '../gameData';
 
 interface MobProps {
@@ -19,10 +18,20 @@ export const Mob: React.FC<MobProps> = ({ data }) => {
       // Update Position
       groupRef.current.position.set(data.position[0], 0, data.position[2]);
 
-      // Floating animation relative to its world position
-      groupRef.current.position.y = 0.8 + Math.sin(t * 2) * 0.2;
-      // Slow rotation
-      groupRef.current.rotation.y += 0.01;
+      // Rotation (Face direction is handled in logic, but adding some bobbing)
+      if (data.state === 'ATTACK_DASH') {
+          // Lean forward aggressively
+          groupRef.current.rotation.x = 0.5; 
+          groupRef.current.position.y = 0.5; // Lower to ground
+      } else {
+          // Floating animation
+          groupRef.current.rotation.x = MathUtils.lerp(groupRef.current.rotation.x, 0, 0.1);
+          groupRef.current.position.y = 0.8 + Math.sin(t * 2) * 0.2;
+          
+          if (data.state === 'PATROL') {
+             groupRef.current.rotation.y += 0.01; // Spin slowly while patrolling
+          }
+      }
 
       // FLASH EFFECT
       if (bodyRef.current) {
