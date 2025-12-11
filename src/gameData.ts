@@ -1,5 +1,3 @@
-import { Vector3 } from 'three';
-
 // --- Colors ---
 export const PALETTE = {
   ground: '#1e2f1e', // Dark green

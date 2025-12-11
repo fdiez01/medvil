@@ -9,7 +9,7 @@ import { Environment } from './components/Environment';
 
 // --- Helper Math ---
 const distance = (p1: number[], p2: number[]) => Math.sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2 + (p1[2]-p2[2])**2);
-const lerp = (start: number, end: number, t: number) => start * (1 - t) + end * t;
+// const lerp = (start: number, end: number, t: number) => start * (1 - t) + end * t;
 
 const INITIAL_GAME_STATE: GameState = {
   day: 1,
