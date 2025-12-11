@@ -54,7 +54,7 @@ export const App = () => {
     const initialMeeples: MeepleType[] = [
       { id: 1, name: 'Haldor', role: 'Chef', status: 'Fit', position: [2, 0, 2], basePosition: [2, 0, 2], targetPosition: null, action: 'IDLE', actionTargetId: null, targetResource: null, actionTimer: 0, stunTimer: 0, color: '#4a6fa5', lastHitTime: -999 },
       { id: 2, name: 'Elara', role: 'Priestess', status: 'Normal', position: [-2, 0, 2], basePosition: [-2, 0, 2], targetPosition: null, action: 'IDLE', actionTargetId: null, targetResource: null, actionTimer: 0, stunTimer: 0, color: '#a54a6f', lastHitTime: -999 },
-      { id: 3, name: 'Barnaby', role: 'Drunkard', status: 'Tired', position: [0, 0, -3], basePosition: [0, 0, -3], targetPosition: null, action: 'IDLE', actionTargetId: null, targetResource: null, actionTimer: 0, stunTimer: 0, color: '#ba55d3', lastHitTime: -999 },
+      { id: 3, name: 'Barnaby', role: 'Drunkard', status: 'Tired', position: [0, 0, -3], basePosition: [0, 0, -3], targetPosition: null, action: 'IDLE', actionTargetId: null, targetResource: null, actionTimer: 0, stunTimer: 0, color: '#6fa54a', lastHitTime: -999 },
     ];
     
     // --- Denser Forest Generation ---
