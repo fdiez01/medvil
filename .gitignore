@@ -23,3 +23,12 @@ dist-ssr
 *.sln
 *.sw?
 medvil.zip
+
+# Fichiers de configuration sensibles (Zone Rouge)
+index.html
+index.tsx
+package.json
+package-lock.json
+tsconfig.json
+vite.config.ts
+postcss.config.cjs
